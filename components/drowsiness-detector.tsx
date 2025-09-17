@@ -393,7 +393,7 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
           }
           
           const lm: Point[] = results.multiFaceLandmarks[0]
-        
+          safeLog(`👁️ Face detected with ${lm.length} landmarks`)
           
           // Build eyes arrays for EAR - with validation
           const leftEye = LEFT_EYE_IDXS.map((i) => lm[i]).filter(p => p && typeof p.x === 'number' && typeof p.y === 'number')
