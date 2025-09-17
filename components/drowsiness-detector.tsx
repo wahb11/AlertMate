@@ -1,10 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FaceMesh } from "@mediapipe/face_mesh"
+import { Camera } from "@mediapipe/camera_utils"
+import * as drawingUtils from "@mediapipe/drawing_utils"
 
 // Safe logging function
 const safeLog = (message: string, ...args: any[]) => {
@@ -123,121 +126,7 @@ function estimateHeadAngles(face: Point[]) {
   return { pitch, yaw }
 }
 
-async function loadFaceMesh() {
-  safeLog("🤖 Loading MediaPipe FaceMesh...")
-  
-  // Check if already loaded
-  if (typeof window !== 'undefined' && (window as any).FaceMesh) {
-    safeLog("✅ FaceMesh already available")
-    return (window as any).FaceMesh
-  }
-  
-  // Ensure we're in a browser environment
-  if (typeof window === 'undefined' || typeof document === 'undefined') {
-    throw new Error("FaceMesh can only be loaded in browser environment")
-  }
-  
-  // Load from CDN with multiple fallbacks
-  if (!(window as any).mpFaceMeshLoaded) {
-    //safeLog("📦 Loading FaceMesh from CDN...")
-    (window as any).mpFaceMeshLoaded = new Promise<void>((resolve, reject) => {
-      const cleanup = () => {
-        if (script && script.parentNode) {
-          script.parentNode.removeChild(script)
-        }
-      }
-      
-      const script = document.createElement("script")
-      
-      // Multiple CDN options for better reliability
-      const cdnUrls = [
-        "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js",
-        "https://unpkg.com/@mediapipe/face_mesh/face_mesh.js"
-      ]
-      
-      let urlIndex = 0
-      let loadTimeout: NodeJS.Timeout
-      
-      const tryLoad = () => {
-        if (urlIndex >= cdnUrls.length) {
-          cleanup()
-          reject(new Error("All CDN sources failed to load MediaPipe FaceMesh"))
-          return
-        }
-        
-        const currentUrl = cdnUrls[urlIndex]
-        safeLog(`🔗 Trying CDN: ${currentUrl}`)
-        
-        script.src = currentUrl
-        script.async = true
-        
-        // Clear any previous timeout
-        if (loadTimeout) clearTimeout(loadTimeout)
-        
-        script.onload = () => {
-          safeLog("✅ FaceMesh script loaded successfully")
-          
-          // Wait for library initialization with longer timeout
-          const initTimeout = setTimeout(() => {
-            if ((window as any).FaceMesh) {
-              safeLog("✅ FaceMesh constructor available")
-              cleanup()
-              resolve()
-            } else {
-              safeWarn("⚠️ FaceMesh constructor not found, trying next CDN...")
-              urlIndex++
-              tryLoad()
-            }
-          }, 1000) // Increased wait time
-          
-          // Safety timeout for initialization
-          setTimeout(() => {
-            clearTimeout(initTimeout)
-            if (!(window as any).FaceMesh) {
-              safeWarn("⚠️ FaceMesh initialization timeout, trying next CDN...")
-              urlIndex++
-              tryLoad()
-            }
-          }, 5000)
-        }
-        
-        script.onerror = (e) => {
-          safeWarn(`⚠️ Failed to load from ${currentUrl}:`, e)
-          urlIndex++
-          setTimeout(tryLoad, 100) // Small delay before next attempt
-        }
-        
-        // Network timeout per URL
-        loadTimeout = setTimeout(() => {
-          safeWarn(`⚠️ Timeout loading from ${currentUrl}`)
-          urlIndex++
-          tryLoad()
-        }, 8000)
-        
-        // Append to head if not already there
-        if (!script.parentNode) {
-          document.head.appendChild(script)
-        }
-      }
-      
-      tryLoad()
-    })
-  }
-  
-  try {
-    await (window as any).mpFaceMeshLoaded
-  } catch (error) {
-    safeError("❌ MediaPipe loading failed:", error)
-    throw error
-  }
-  
-  if (!(window as any).FaceMesh) {
-    throw new Error("FaceMesh constructor not available after loading")
-  }
-  
-  safeLog("✅ FaceMesh ready to use")
-  return (window as any).FaceMesh
-}
+// Simplified FaceMesh loading - now using direct imports
 
 type DrowsinessDetectorProps = {
   onClose?: () => void
@@ -425,31 +314,13 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
       setLoadingProgress(60)
       safeLog("🤖 Initializing MediaPipe FaceMesh...")
       
-      // Add timeout for FaceMesh loading
-      const FACEMESH_TIMEOUT = 30000 // 30 seconds
-      const faceMeshPromise = loadFaceMesh()
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("FaceMesh loading timeout after 30 seconds")), FACEMESH_TIMEOUT)
-      })
-      
-      const FaceMesh = await Promise.race([faceMeshPromise, timeoutPromise])
-      safeLog("✅ FaceMesh constructor loaded")
       setLoadingProgress(75)
+      safeLog("✅ FaceMesh constructor loaded")
       
       setStatusText("Initializing FaceMesh model...")
       
-      // @ts-ignore
-      const faceMesh = new FaceMesh({ 
-        locateFile: (file: string) => {
-          // Try multiple CDNs for assets too
-          const cdnBases = [
-            "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh",
-            "https://unpkg.com/@mediapipe/face_mesh"
-          ]
-          const url = `${cdnBases[0]}/${file}`
-          safeLog(`📦 Loading FaceMesh asset: ${url}`)
-          return url
-        }
+      const faceMesh = new FaceMesh({
+        locateFile: (file) => `/mediapipe/${file}`,
       })
       
       if (!faceMesh) {
@@ -459,13 +330,12 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
       faceMeshRef.current = faceMesh
       safeLog("⚙️ Configuring FaceMesh options...")
       
-      // @ts-ignore
       faceMesh.setOptions({
-        maxNumFaces: 1,
-        refineLandmarks: false, // Disable to speed up initialization
-        minDetectionConfidence: 0.3, // Further lowered for better detection
-        minTrackingConfidence: 0.3,  // Further lowered for better detection  
         selfieMode: true,
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
       })
       
       safeLog("✅ FaceMesh configured successfully")
@@ -480,8 +350,7 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
       let earEma = 0
       let marEma = 0
       const smoothing = 0.2
-      // @ts-ignore
-      faceMesh.onResults((results: any) => {
+      faceMesh.onResults((results) => {
         const canvas = canvasRef.current
         const video = videoRef.current
         if (!canvas || !video) {
@@ -500,11 +369,31 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
           canvas.height = video.videoHeight
           safeLog(`🖼️ Canvas resized to: ${canvas.width}x${canvas.height}`)
         }
+        
+        ctx.save()
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
 
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        if (results.multiFaceLandmarks) {
+          for (const landmarks of results.multiFaceLandmarks) {
+            // Draw face mesh
+            drawingUtils.drawConnectors(ctx, landmarks, FaceMesh.FACEMESH_TESSELATION, {
+              color: "#C0C0C070",
+              lineWidth: 1,
+            })
+            drawingUtils.drawConnectors(ctx, landmarks, FaceMesh.FACEMESH_RIGHT_EYE, {
+              color: "#FF3030",
+            })
+            drawingUtils.drawConnectors(ctx, landmarks, FaceMesh.FACEMESH_LEFT_EYE, {
+              color: "#30FF30",
+            })
+            drawingUtils.drawConnectors(ctx, landmarks, FaceMesh.FACEMESH_FACE_OVAL, {
+              color: "#E0E0E0",
+            })
+          }
+          
           const lm: Point[] = results.multiFaceLandmarks[0]
-          safeLog(`👁️ Face detected with ${lm.length} landmarks`)
+        
           
           // Build eyes arrays for EAR - with validation
           const leftEye = LEFT_EYE_IDXS.map((i) => lm[i]).filter(p => p && typeof p.x === 'number' && typeof p.y === 'number')
@@ -605,66 +494,24 @@ export function DrowsinessDetector({ onClose, onMetrics, autoStart = false, show
             onMetrics({ score: 0, ear: 0, mar: 0 })
           }
         }
+        
+        ctx.restore()
       })
 
-      // Animation loop using MediaPipe's send method
-      const onFrame = async () => {
-        if (!videoRef.current || !running) {
-          safeLog("⏸️ Animation loop stopped (video not ready or not running)")
-          return
-        }
-        
-        const canvas = canvasRef.current
-        const video = videoRef.current
-        const faceMesh = faceMeshRef.current
-        
-        if (!faceMesh) {
-          safeWarn("⚠️ FaceMesh not initialized yet")
-          rafIdRef.current = requestAnimationFrame(onFrame)
-          return
-        }
-        
-        try {
-          // Update canvas if needed
-          if (canvas && video) {
-            const ctx = canvas.getContext("2d")
-            if (ctx) {
-              if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-                canvas.width = video.videoWidth
-                canvas.height = video.videoHeight
-                safeLog(`🖼️ Canvas updated to: ${canvas.width}x${canvas.height}`)
-              }
-              
-              // Only draw if video is ready
-              if (video.readyState >= 2) {
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-              }
-            }
-          }
-          
-          // Send frame to FaceMesh if video is ready
-          if (video.readyState >= 2) {
-            // @ts-ignore
-            await faceMesh.send({ image: video })
-          } else {
-            safeLog(`⏳ Waiting for video readyState: ${video.readyState}/4`)
-          }
-        } catch (frameError) {
-          safeError("❌ Error in animation frame:", frameError)
-          // Continue processing despite error
-        }
-        
-        // Schedule next frame
-        if (running) {
-          rafIdRef.current = requestAnimationFrame(onFrame)
-        }
-      }
+      // Use MediaPipe Camera utility for better integration
+      const camera = new Camera(videoRef.current, {
+        onFrame: async () => {
+          await faceMesh.send({ image: videoRef.current! })
+        },
+        width: 640,
+        height: 480,
+      })
 
       setEarThreshold(DEFAULT_EAR_THRESHOLD)
       setStatusText("Starting monitoring...")
       
-      // Start animation loop first
-      requestAnimationFrame(onFrame)
+      // Start camera
+      camera.start()
       
       // Set running state after everything is set up
       setLoadingProgress(100)
