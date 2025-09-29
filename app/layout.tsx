@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter, Roboto_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ScrollReveal } from "@/components/scroll-reveal"
 import { AuthProvider } from "@/components/auth-context"
 import { Suspense } from "react"
 import "./globals.css"
@@ -31,8 +32,12 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="font-sans">
         <Suspense fallback={null}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <AuthProvider>{children}</AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+            <AuthProvider>
+              <ScrollReveal variant="up">
+                {children}
+              </ScrollReveal>
+            </AuthProvider>
           </ThemeProvider>
         </Suspense>
       </body>

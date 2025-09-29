@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
-import { Navigation } from "@/components/navigation"
+// Navigation is provided by app/admin/layout.tsx
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts"
 import {
   Users,
@@ -116,12 +116,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Navigation userRole="admin" />
-
-      {/* Main content with proper spacing for navigation */}
-      <div className="flex-1 lg:ml-64">
-        <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -735,8 +730,6 @@ export default function AdminDashboard() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Navigation } from "@/components/navigation"
+// Navigation is provided by app/passenger/layout.tsx
 import {
   Phone,
   AlertTriangle,
@@ -77,13 +77,7 @@ export default function PassengerDashboard() {
   const driverStatus = getDriverStatus(driverAlertness)
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Navigation component for passenger role */}
-      <Navigation userRole="passenger" />
-
-      {/* Main content with proper spacing for navigation */}
-      <div className="flex-1 lg:ml-64">
-        <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6">
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-foreground">Passenger Safety Monitor</h1>
@@ -494,8 +488,6 @@ export default function PassengerDashboard() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
     </div>
   )
 }

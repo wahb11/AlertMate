@@ -123,3 +123,59 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Dock styles */
+.dock-outer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+}
+
+.dock-panel {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 9999px;
+  background: var(--color-card, hsl(0 0% 100% / 0.7));
+  backdrop-filter: blur(10px);
+  border: 1px solid hsl(0 0% 90% / 0.5);
+}
+
+.dark .dock-panel {
+  background: hsl(240 5% 10% / 0.6);
+  border-color: hsl(240 5% 26% / 0.5);
+}
+
+.dock-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.dock-icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.dock-label {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  pointer-events: none;
+}
+

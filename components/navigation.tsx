@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth-context"
+import Logo from "@/components/Logo"
 
 const navigation = [
   { name: "Dashboard", href: "/driver", icon: "🏠", role: "driver" },
@@ -85,9 +86,8 @@ export function Navigation({ userRole = "driver" }: NavigationProps) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64">
-            <div className="flex items-center space-x-2 mb-6">
-              <span className="text-xl">🛡️</span>
-              <span className="text-lg font-bold">AlertMate</span>
+            <div className="mb-6">
+              <Logo />
             </div>
             <nav className="space-y-2">
               <NavItems />
@@ -111,8 +111,7 @@ export function Navigation({ userRole = "driver" }: NavigationProps) {
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex flex-col flex-grow bg-card border-r border-border">
           <div className="flex items-center space-x-2 p-4 border-b border-border">
-            <span className="text-xl">🛡️</span>
-            <span className="text-lg font-bold">AlertMate</span>
+            <Logo />
             <Badge variant="secondary" className="ml-auto">
               {userRole}
             </Badge>

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Navigation } from "@/components/navigation"
+// Navigation is provided by app/driver/layout.tsx or equivalent wrapper
 import { CameraTest } from "@/components/camera-test"
 import { Shield, Activity, Battery } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
@@ -42,12 +42,7 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Navigation userRole="driver" />
-
-      {/* Main content with proper spacing for navigation */}
-      <div className="flex-1 lg:ml-64">
-        <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
@@ -265,8 +260,6 @@ export default function DriverDashboard() {
               </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
     </div>
   )
 }
